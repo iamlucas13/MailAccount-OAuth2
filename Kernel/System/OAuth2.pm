@@ -117,6 +117,9 @@ sub BuildAuthURL {
     $URL->query_param_append( 'response_mode', 'query' );
     $URL->query_param_append( 'state',         $RandomString );
     $URL->query_param_append( 'login_hint',    $Param{Login} );
+    $URL->query_param_append( 'redirect_uri',  'https://indigo.oremis.fr/otobo/index.pl?Action=AdminMailAccount' );
+    $URL->query_param_append( 'access_type',   'offline' );
+    $URL->query_param_append( 'prompt',        'consent' );
 
     return $URL->as_string;
 }
@@ -167,6 +170,7 @@ sub _RequestAccessToken {
         client_secret => $Param{ClientSecret},
         scope         => $Param{Scope},
         grant_type    => $Param{GrantType},
+        redirect_uri  => 'https://indigo.oremis.fr/otobo/index.pl?Action=AdminMailAccount',
     );
 
     my $DBObject;
@@ -239,7 +243,7 @@ sub _RequestAccessToken {
     }
 
     # Should not happen if no error message given.
-    if ( !$ResponseData->{access_token} || !$ResponseData->{refresh_token} || !$ResponseData->{expires_in} ) {
+    if ( !$ResponseData->{access_token} || !$ResponseData->{expires_in} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Host did not provide "access_token", "refresh_token" or "expires_in"!',
@@ -248,7 +252,7 @@ sub _RequestAccessToken {
     }
 
     # renew refresh token if necessary
-    if ( !$RefreshToken || $RefreshToken ne $ResponseData->{refresh_token} ) {
+    if ($ResponseData->{refresh_token} ) {
         $DBObject //= $Kernel::OM->Get('Kernel::System::DB');
 
         # delete old data
